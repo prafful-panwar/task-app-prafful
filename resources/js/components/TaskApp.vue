@@ -9,21 +9,25 @@ const newTask = ref({
     due_date: ''
 });
 const loading = ref(false);
-const error = ref(null);
-
 const fetchTasks = async () => {
     loading.value = true;
-    error.value = null;
     try {
-        // request to list all tasks
         const response = await axios.get('/api/tasks');
         tasks.value = response.data.data;
     } catch (err) {
         console.error('Error fetching tasks', err);
-        error.value = 'Failed to load tasks.';
+        alert('Failed to load tasks.');
     } finally {
         loading.value = false;
     }
+};
+
+const formatError = (err) => {
+    if (err.response && err.response.status === 422) {
+        // Validation errors
+        return Object.values(err.response.data.errors).flat().join('\n');
+    }
+    return err.response?.data?.message || 'An unexpected error occurred.';
 };
 
 const createTask = async () => {
@@ -32,19 +36,15 @@ const createTask = async () => {
         newTask.value = { title: '', description: '', status: 'pending', due_date: '' };
         await fetchTasks();
     } catch (err) {
-        console.error('Error creating task', err);
-        alert('Failed to create task. Please check your input.');
+        alert(formatError(err));
     }
 };
 
 const updateStatus = async (task) => {
     try {
         await axios.put(`/api/tasks/${task.id}`, { ...task });
-        // No auto-refresh to maintain position, or refresh current page
-        // await fetchTasks(pagination.value.current_page); 
     } catch (err) {
-        console.error('Error updating task', err);
-        alert('Failed to update status.');
+        alert(formatError(err));
         await fetchTasks();
     }
 };
@@ -55,8 +55,7 @@ const deleteTask = async (id) => {
         await axios.delete(`/api/tasks/${id}`);
         await fetchTasks();
     } catch (err) {
-        console.error('Error deleting task', err);
-        alert('Failed to delete task.');
+        alert(formatError(err));
     }
 };
 
@@ -70,10 +69,6 @@ onMounted(() => {
         <h1 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-4">Task Manager</h1>
 
         <!-- Error Message -->
-        <div v-if="error" class="bg-red-100 text-red-700 p-3 rounded mb-4">
-            {{ error }}
-        </div>
-
         <!-- Create Task Form -->
         <div class="mb-8 p-6 bg-gray-50 border rounded-lg shadow-sm">
             <h2 class="text-xl font-semibold mb-4 text-gray-700">Add New Task</h2>
