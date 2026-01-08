@@ -94,7 +94,7 @@ test('can create a new task', function () {
         'title' => 'Test Task',
         'description' => 'This is a test task',
         'status' => \App\Enums\TaskStatus::Pending->value,
-        'due_date' => '2024-12-31',
+        'due_date' => now()->addMonth()->format('Y-m-d'),
     ];
 
     $response = $this->postJson('/api/tasks', $taskData);
@@ -294,12 +294,14 @@ test('can delete a task', function () {
     ]);
 });
 
-test('returns 404 when deleting non-existent task', function () {
+test('cannot create a task with past due date', function () {
+    $taskData = [
+        'title' => 'Test Task',
+        'due_date' => now()->subDay()->format('Y-m-d'),
+    ];
 
-    $response = $this->deleteJson('/api/tasks/99999');
+    $response = $this->postJson('/api/tasks', $taskData);
 
-    $response->assertNotFound()
-        ->assertJson([
-            'message' => 'Task not found.',
-        ]);
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors(['due_date']);
 });

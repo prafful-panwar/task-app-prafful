@@ -28,7 +28,7 @@ class UpdateTaskRequest extends FormRequest
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'status' => ['sometimes', 'required', Rule::enum(TaskStatus::class)],
-            'due_date' => ['nullable', 'date'],
+            'due_date' => ['nullable', 'date', 'after_or_equal:today'],
         ];
     }
 }

@@ -24,7 +24,7 @@ class TaskFactory extends Factory
             'title' => fake()->sentence(),
             'description' => fake()->optional()->paragraph(),
             'status' => fake()->randomElement(TaskStatus::cases()),
-            'due_date' => fake()->optional()->date(),
+            'due_date' => fake()->boolean() ? fake()->dateTimeBetween('now', '+1 year')->format('Y-m-d') : null,
         ];
     }
 }
