@@ -1,4 +1,4 @@
-# Task App Backend
+# Task App (Laravel + Vue)
 
 ## Setup
 
