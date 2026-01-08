@@ -33,16 +33,49 @@
     php artisan db:seed
     ```
 
-4.  **Start Server**
-    Start the local development server:
+4.  **Start Server (Local)**
+
+    **Important:** Port `8000` is reserved for Docker. To avoid conflicts (or if you want to run both), always run the local server on a different port (e.g., 8001).
 
     ```bash
-    php artisan serve
+    php artisan serve --port=8001
     ```
 
-    The API will be available at: `http://127.0.0.1:8000/api`
+    The API will be available at: `http://127.0.0.1:8001/api`
 
     _(Or if using Laravel Herd: `http://task-app-prafful.test/api`)_
+
+## Docker Setup (Recommended)
+
+You can run the entire application (Frontend + Backend + Database) using Docker.
+
+1.  **Prerequisites**
+
+    -   Ensure [Docker Desktop](https://www.docker.com/products/docker-desktop/) is installed and running.
+
+2.  **Start Application**
+
+    ```bash
+    docker-compose up -d --build
+    ```
+
+3.  **Access Application**
+
+    -   **Frontend**: [http://localhost:8000](http://localhost:8000)
+    -   **API**: [http://localhost:8000/api/tasks](http://localhost:8000/api/tasks)
+
+4.  **Run Migrations (First Time Only)**
+    If this is your first time running Docker, populate the database:
+
+    ```bash
+    docker-compose exec app php artisan migrate
+    docker-compose exec app php artisan db:seed
+    ```
+
+5.  **Stop Application**
+    ```bash
+    docker-compose down
+    ```
 
 ## API Documentation
 
