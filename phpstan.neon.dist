@@ -1,0 +1,90 @@
+includes:
+    - vendor/nunomaduro/larastan/extension.neon
+
+parameters:
+    level: 6
+    paths:
+        - app
+        - config
+        - database
+        - routes
+        - tests/Feature
+        - tests/Unit
+
+    excludePaths:
+        - storage/*
+        - vendor/*
+        - node_modules/*
+        - public/*
+        - bootstrap/cache/*
+
+    checkMissingIterableValueType: false
+
+    # Laravel specific settings
+    universalObjectCratesClasses:
+        - Illuminate\Support\Collection
+        - Illuminate\Database\Eloquent\Collection
+        - Illuminate\Support\MessageBag
+
+    # Ignore these errors
+    ignoreErrors:
+        - '#Call to an undefined method.*#i'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder::#i'
+        - '#Method .* does not exist#i'
+        - '#Access to an undefined property#i'
+        - '#Unsafe usage of new static#i'
+        - '#Unsafe usage of new static#i'
+        - '#does not accept int#i'
+        - '#Access to an undefined property#i'
+        - '#Call to an undefined method#i'
+        - '#Method .* invoked with [0-9]+ parameters#i'
+        - '#Parameter .* of method .* expects#i'
+        - '#Property .* is not read#i'
+        - '#Unreachable statement#i'
+        - '#Unused variable#i'
+
+    # Laravel specific
+    noUnnecessaryCollectionCall: false
+    checkExplicitMixed: false
+    checkMissingCallableSignature: false
+    checkMissingIterableValueType: false
+
+    # Dynamic return type extensions
+    dynamicConstantNames:
+        - 'App\\Enums\\*'
+
+    # Larastan specific
+    reportUnmatchedIgnoredErrors: false
+    checkModelProperties: true
+    checkModelPropertiesOnlySoftDeletes: false
+    checkModelPropertiesOnlyEloquent: false
+    checkModelPropertiesOnlyFillable: false
+    checkModelPropertiesOnlyGuarded: false
+    checkModelPropertiesOnlyHidden: false
+    checkModelPropertiesOnlyVisible: false
+    checkModelPropertiesOnlyAppends: false
+    checkModelPropertiesOnlyCasts: false
+    checkModelPropertiesOnlyDates: false
+    checkModelPropertiesOnlyWith: false
+    checkModelPropertiesOnlyWithCount: false
+    checkModelPropertiesOnlyWithTrashed: false
+    checkModelPropertiesOnlyWithoutTrashed: false
+    checkModelPropertiesOnlyWithCount: false
+    checkModelPropertiesOnlyWithTrashed: false
+    checkModelPropertiesOnlyWithoutTrashed: false
+
+services:
+    -
+        class: PHPStan\Type\Laravel\EloquentCollectionDynamicReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+
+    -
+        class: PHPStan\Type\Laravel\ModelFindExtension
+        tags:
+            - phpstan.broker.dynamicStaticMethodReturnTypeExtension
+
+    -
+        class: PHPStan\Type\Laravel\ModelFindExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
