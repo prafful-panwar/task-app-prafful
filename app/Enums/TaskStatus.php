@@ -10,7 +10,7 @@ enum TaskStatus: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Pending => 'Pending',
             self::InProgress => 'In Progress',
             self::Completed => 'Completed',

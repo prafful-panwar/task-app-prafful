@@ -1,10 +1,9 @@
 <?php
 
+use App\Enums\TaskStatus;
 use App\Models\Task;
 
-
-
-test('can list all tasks', function () {
+test('can list all tasks', function (): void {
 
     Task::factory()->count(5)->create([]);
 
@@ -32,7 +31,7 @@ test('can list all tasks', function () {
     expect($response->json('data'))->toHaveCount(5);
 });
 
-test('can filter tasks by status', function () {
+test('can filter tasks by status', function (): void {
 
     Task::factory()->create(['status' => 'pending']);
     Task::factory()->create(['status' => 'in_progress']);
@@ -45,9 +44,13 @@ test('can filter tasks by status', function () {
     expect($response->json('data.0.status'))->toBe('pending');
 });
 
-test('can paginate tasks', function () {
+test('can paginate tasks', function (): void {
 
-    Task::factory()->count(25)->create([]);
+    for ($i = 0; $i < 25; $i++) {
+        Task::factory()->create([
+            'created_at' => now()->subMinutes($i),
+        ]);
+    }
 
     $response = $this->getJson('/api/tasks?per_page=10');
 
@@ -61,39 +64,41 @@ test('can paginate tasks', function () {
                 'next',
             ],
             'meta' => [
-                'current_page',
-                'from',
-                'last_page',
                 'path',
                 'per_page',
-                'to',
-                'total',
+                'next_cursor',
+                'prev_cursor',
             ],
         ]);
 
     expect($response->json('data'))->toHaveCount(10);
     expect($response->json('meta.per_page'))->toBe(10);
-    expect($response->json('meta.total'))->toBe(25);
-    expect($response->json('meta.last_page'))->toBe(3);
+    expect($response->json('meta.next_cursor'))->not->toBeNull();
 });
 
-test('can navigate paginated tasks', function () {
+test('can navigate paginated tasks', function (): void {
 
-    Task::factory()->count(25)->create([]);
+    for ($i = 0; $i < 25; $i++) {
+        Task::factory()->create([
+            'created_at' => now()->subMinutes($i),
+        ]);
+    }
 
-    $response = $this->getJson('/api/tasks?per_page=10&page=2');
+    $response1 = $this->getJson('/api/tasks?per_page=10');
+    $nextCursor = $response1->json('meta.next_cursor');
 
-    $response->assertSuccessful();
-    expect($response->json('meta.current_page'))->toBe(2);
-    expect($response->json('data'))->toHaveCount(10);
+    $response2 = $this->getJson("/api/tasks?per_page=10&cursor={$nextCursor}");
+
+    $response2->assertSuccessful();
+    expect($response2->json('data'))->toHaveCount(10);
 });
 
-test('can create a new task', function () {
+test('can create a new task', function (): void {
 
     $taskData = [
         'title' => 'Test Task',
         'description' => 'This is a test task',
-        'status' => \App\Enums\TaskStatus::Pending->value,
+        'status' => TaskStatus::Pending->value,
         'due_date' => now()->addMonth()->format('Y-m-d'),
     ];
 
@@ -117,11 +122,11 @@ test('can create a new task', function () {
 
     $this->assertDatabaseHas('tasks', [
         'title' => 'Test Task',
-        'status' => \App\Enums\TaskStatus::Pending->value,
+        'status' => TaskStatus::Pending->value,
     ]);
 });
 
-test('can create a task with minimal required fields', function () {
+test('can create a task with minimal required fields', function (): void {
 
     $taskData = [
         'title' => 'Minimal Task',
@@ -134,7 +139,7 @@ test('can create a task with minimal required fields', function () {
     expect($response->json('data.status'))->toBe('pending');
 });
 
-test('cannot create a task without title', function () {
+test('cannot create a task without title', function (): void {
 
     $taskData = [
         'description' => 'Task without title',
@@ -146,7 +151,7 @@ test('cannot create a task without title', function () {
         ->assertJsonValidationErrors(['title']);
 });
 
-test('cannot create a task with invalid status', function () {
+test('cannot create a task with invalid status', function (): void {
 
     $taskData = [
         'title' => 'Test Task',
@@ -159,7 +164,7 @@ test('cannot create a task with invalid status', function () {
         ->assertJsonValidationErrors(['status']);
 });
 
-test('cannot create a task with invalid date format', function () {
+test('cannot create a task with invalid date format', function (): void {
 
     $taskData = [
         'title' => 'Test Task',
@@ -172,7 +177,7 @@ test('cannot create a task with invalid date format', function () {
         ->assertJsonValidationErrors(['due_date']);
 });
 
-test('can show a single task', function () {
+test('can show a single task', function (): void {
 
     $task = Task::factory()->create([]);
 
@@ -195,7 +200,7 @@ test('can show a single task', function () {
     expect($response->json('data.title'))->toBe($task->title);
 });
 
-test('returns 404 when task not found', function () {
+test('returns 404 when task not found', function (): void {
 
     $response = $this->getJson('/api/tasks/99999');
 
@@ -205,17 +210,17 @@ test('returns 404 when task not found', function () {
         ]);
 });
 
-test('can update a task', function () {
+test('can update a task', function (): void {
 
     $task = Task::factory()->create([
         'title' => 'Original Title',
-        'status' => \App\Enums\TaskStatus::Pending->value,
+        'status' => TaskStatus::Pending->value,
 
     ]);
 
     $updateData = [
         'title' => 'Updated Title',
-        'status' => \App\Enums\TaskStatus::InProgress->value,
+        'status' => TaskStatus::InProgress->value,
     ];
 
     $response = $this->putJson("/api/tasks/{$task->id}", $updateData);
@@ -227,20 +232,20 @@ test('can update a task', function () {
     $this->assertDatabaseHas('tasks', [
         'id' => $task->id,
         'title' => 'Updated Title',
-        'status' => \App\Enums\TaskStatus::InProgress->value,
+        'status' => TaskStatus::InProgress->value,
     ]);
 });
 
-test('can partially update a task', function () {
+test('can partially update a task', function (): void {
 
     $task = Task::factory()->create([
         'title' => 'Original Title',
-        'status' => \App\Enums\TaskStatus::Pending->value,
+        'status' => TaskStatus::Pending->value,
 
     ]);
 
     $updateData = [
-        'status' => \App\Enums\TaskStatus::Completed->value,
+        'status' => TaskStatus::Completed->value,
     ];
 
     $response = $this->putJson("/api/tasks/{$task->id}", $updateData);
@@ -250,7 +255,7 @@ test('can partially update a task', function () {
     expect($response->json('data.title'))->toBe('Original Title');
 });
 
-test('returns 404 when updating non-existent task', function () {
+test('returns 404 when updating non-existent task', function (): void {
 
     $updateData = [
         'title' => 'Updated Title',
@@ -264,7 +269,7 @@ test('returns 404 when updating non-existent task', function () {
         ]);
 });
 
-test('cannot update task with invalid status', function () {
+test('cannot update task with invalid status', function (): void {
 
     $task = Task::factory()->create([]);
 
@@ -278,7 +283,7 @@ test('cannot update task with invalid status', function () {
         ->assertJsonValidationErrors(['status']);
 });
 
-test('can delete a task', function () {
+test('can delete a task', function (): void {
 
     $task = Task::factory()->create([]);
 
@@ -294,7 +299,7 @@ test('can delete a task', function () {
     ]);
 });
 
-test('cannot create a task with past due date', function () {
+test('cannot create a task with past due date', function (): void {
     $taskData = [
         'title' => 'Test Task',
         'due_date' => now()->subDay()->format('Y-m-d'),

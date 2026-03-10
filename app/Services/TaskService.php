@@ -5,32 +5,40 @@ namespace App\Services;
 use App\DTOs\Task\CreateTaskDTO;
 use App\DTOs\Task\UpdateTaskDTO;
 use App\Models\Task;
-use Illuminate\Pagination\LengthAwarePaginator;
+use App\Repositories\Contracts\TaskRepositoryInterface;
+use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class TaskService
 {
+    public function __construct(
+        private readonly TaskRepositoryInterface $taskRepository
+    ) {}
+
     /**
      * Get tasks with optional status filter.
      *
-     * @return LengthAwarePaginator<Task>
+     * @return CursorPaginator<int, Task>
      */
-    public function getTasks(?string $status = null, int $perPage = 10): LengthAwarePaginator
+    public function getTasks(?string $status = null, int $perPage = 10): CursorPaginator
     {
-        $query = Task::query();
-
-        if ($status !== null) {
-            $query->where('status', $status);
-        }
-
-        return $query->orderBy('created_at', 'desc')->paginate($perPage);
+        return $this->taskRepository->paginateTasks($status, $perPage);
     }
 
     /**
-     * Get a single task by ID.
+     * Get a single task by ID or throw a 404 JSON response.
      */
-    public function getTaskById(int $id): ?Task
+    public function getTaskByIdOrFail(int $id): Task
     {
-        return Task::find($id);
+        $task = $this->taskRepository->findById($id);
+
+        if (! $task instanceof Task) {
+            throw new HttpResponseException(
+                response()->json(['message' => 'Task not found.'], 404)
+            );
+        }
+
+        return $task;
     }
 
     /**
@@ -38,7 +46,7 @@ class TaskService
      */
     public function createTask(CreateTaskDTO $dto): Task
     {
-        return Task::create($dto->toArray());
+        return $this->taskRepository->create($dto->toArray());
     }
 
     /**
@@ -46,9 +54,7 @@ class TaskService
      */
     public function updateTask(Task $task, UpdateTaskDTO $dto): Task
     {
-        $task->update($dto->toArray());
-
-        return $task->fresh();
+        return $this->taskRepository->update($task, $dto->toArray());
     }
 
     /**
@@ -56,6 +62,6 @@ class TaskService
      */
     public function deleteTask(Task $task): bool
     {
-        return $task->delete();
+        return $this->taskRepository->delete($task);
     }
 }

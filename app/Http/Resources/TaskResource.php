@@ -2,13 +2,17 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\TaskStatus;
+use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 
 /**
- * @mixin \App\Models\Task
- * @property \App\Enums\TaskStatus $status
- * @property \Illuminate\Support\Carbon|null $due_date
+ * @mixin Task
+ *
+ * @property TaskStatus $status
+ * @property Carbon|null $due_date
  */
 class TaskResource extends JsonResource
 {

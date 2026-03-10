@@ -8,26 +8,31 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Resources\TaskResource;
+use App\Models\Task;
 use App\Services\TaskService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         private readonly TaskService $taskService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request): JsonResponse
     {
-        $status = $request->query('status');
-        $perPage = (int) $request->query('per_page', 10);
+        $this->authorize('viewAny', Task::class);
 
-        $tasks = $this->taskService->getTasks($status, $perPage);
+        $tasks = $this->taskService->getTasks(
+            $request->query('status'),
+            (int) $request->query('per_page', 10)
+        );
 
         return TaskResource::collection($tasks)->response();
     }
@@ -37,30 +42,24 @@ class TaskController extends Controller
      */
     public function store(StoreTaskRequest $request): JsonResponse
     {
+        $this->authorize('create', Task::class);
+
         $dto = CreateTaskDTO::fromArray($request->validated());
         $task = $this->taskService->createTask($dto);
 
-        return response()->json([
-            'data' => new TaskResource($task),
-        ], 201);
+        return response()->json(['data' => new TaskResource($task)], 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, string $id): JsonResponse
+    public function show(string $id): JsonResponse
     {
-        $task = $this->taskService->getTaskById((int) $id);
+        $task = $this->taskService->getTaskByIdOrFail((int) $id);
 
-        if (!$task) {
-            return response()->json([
-                'message' => 'Task not found.',
-            ], 404);
-        }
+        $this->authorize('view', $task);
 
-        return response()->json([
-            'data' => new TaskResource($task),
-        ]);
+        return response()->json(['data' => new TaskResource($task)]);
     }
 
     /**
@@ -68,39 +67,27 @@ class TaskController extends Controller
      */
     public function update(UpdateTaskRequest $request, string $id): JsonResponse
     {
-        $task = $this->taskService->getTaskById((int) $id);
+        $task = $this->taskService->getTaskByIdOrFail((int) $id);
 
-        if (!$task) {
-            return response()->json([
-                'message' => 'Task not found.',
-            ], 404);
-        }
+        $this->authorize('update', $task);
 
         $dto = UpdateTaskDTO::fromArray($request->validated());
         $task = $this->taskService->updateTask($task, $dto);
 
-        return response()->json([
-            'data' => new TaskResource($task),
-        ]);
+        return response()->json(['data' => new TaskResource($task)]);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Request $request, string $id): JsonResponse
+    public function destroy(string $id): JsonResponse
     {
-        $task = $this->taskService->getTaskById((int) $id);
+        $task = $this->taskService->getTaskByIdOrFail((int) $id);
 
-        if (!$task) {
-            return response()->json([
-                'message' => 'Task not found.',
-            ], 404);
-        }
+        $this->authorize('delete', $task);
 
         $this->taskService->deleteTask($task);
 
-        return response()->json([
-            'message' => 'Task deleted successfully.',
-        ], 200);
+        return response()->json(['message' => 'Task deleted successfully.'], 200);
     }
 }

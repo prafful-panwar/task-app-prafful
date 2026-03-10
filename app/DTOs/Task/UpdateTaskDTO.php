@@ -2,12 +2,14 @@
 
 namespace App\DTOs\Task;
 
+use App\Enums\TaskStatus;
+
 class UpdateTaskDTO
 {
     public function __construct(
         public readonly ?string $title,
         public readonly ?string $description,
-        public readonly ?\App\Enums\TaskStatus $status,
+        public readonly ?TaskStatus $status,
         public readonly ?string $dueDate,
     ) {}
 
@@ -21,7 +23,7 @@ class UpdateTaskDTO
         return new self(
             title: $data['title'] ?? null,
             description: $data['description'] ?? null,
-            status: isset($data['status']) ? \App\Enums\TaskStatus::from($data['status']) : null,
+            status: isset($data['status']) ? TaskStatus::from($data['status']) : null,
             dueDate: $data['due_date'] ?? null,
         );
     }
@@ -43,7 +45,7 @@ class UpdateTaskDTO
             $data['description'] = $this->description;
         }
 
-        if ($this->status !== null) {
+        if ($this->status instanceof TaskStatus) {
             $data['status'] = $this->status->value;
         }
 

@@ -2,12 +2,14 @@
 
 namespace App\DTOs\Task;
 
+use App\Enums\TaskStatus;
+
 class CreateTaskDTO
 {
     public function __construct(
         public readonly string $title,
         public readonly ?string $description,
-        public readonly \App\Enums\TaskStatus $status,
+        public readonly TaskStatus $status,
         public readonly ?string $dueDate,
     ) {}
 
@@ -21,7 +23,7 @@ class CreateTaskDTO
         return new self(
             title: $data['title'],
             description: $data['description'] ?? null,
-            status: isset($data['status']) ? \App\Enums\TaskStatus::from($data['status']) : \App\Enums\TaskStatus::Pending,
+            status: isset($data['status']) ? TaskStatus::from($data['status']) : TaskStatus::Pending,
             dueDate: $data['due_date'] ?? null,
         );
     }
